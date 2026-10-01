@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Task Management System</title>
+    <style>
+        :root {
+            --bg: #f5f6f8;
+            --card: #fff;
+            --tx: #1d2330;
+            --mu: #6b7385;
+            --bd: #e1e4ea;
+            --ac: #3b5bdb;
+            --dn: #d6336c;
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px)
+        }
+
+        @media(prefers-color-scheme:dark) {
+            :root:not([data-theme="light"]) {
+                --bg: #14171f;
+                --card: #1c202b;
+                --tx: #e8eaf0;
+                --mu: #8f97aa;
+                --bd: #2c3242;
+                --ac: #748ffc;
+                --dn: #f06595
+            }
+        }
+
+        :root[data-theme="dark"] {
+            --bg: #14171f;
+            --card: #1c202b;
+            --tx: #e8eaf0;
+            --mu: #8f97aa;
+            --bd: #2c3242;
+            --ac: #748ffc;
+            --dn: #f06595
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html {
+            scroll-padding-top: env(safe-area-inset-top, 0px)
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--tx);
+            font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif
+        }
+
+        button,
+        input,
+        select,
+        textarea {
+            font: inherit;
+            color: inherit
+        }
+
+        input,
+        select,
+        textarea {
+            background: var(--card);
+            border: 1px solid var(--bd);
+            border-radius: 8px;
+            padding: 8px 10px;
+            width: 100%
+        }
+
+        button {
+            cursor: pointer;
+            border: 1px solid var(--bd);
+            background: var(--card);
+            border-radius: 8px;
+            padding: 7px 12px
+        }
+
+        .pri {
+            background: var(--ac);
+            border-color: var(--ac);
+            color: #fff
+        }
+
+        .dng {
+            color: var(--dn)
+        }
+
+        .login {
+            max-width: 340px;
+            margin: 12vh auto;
+            background: var(--card);
+            border: 1px solid var(--bd);
+            border-radius: 14px;
+            padding: 24px
+        }
+
+        .login h2 {
+            margin: 0 0 14px
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--mu);
+            margin: 10px 0 4px
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--mu);
+            margin-top: 14px
+        }
+
+        .err {
+            color: var(--dn);
+            font-size: 13px;
+            margin-top: 8px
+        }
+
+        .app {
+            display: flex;
+            min-height: 100vh
+        }
+
+        nav {
+            width: 200px;
+            background: var(--card);
+            border-right: 1px solid var(--bd);
+            padding: 16px 10px;
+            flex-shrink: 0
+        }
+
+        nav h3 {
+            margin: 0 8px 14px;
+            font-size: 16px
+        }
+
+        nav button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            border: 0;
+            background: none;
+            padding: 9px 10px;
+            margin-bottom: 2px
+        }
+
+        nav button.on {
+            background: var(--ac);
+            color: #fff
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            min-width: 0
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px
+        }
+
+        .bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px
+        }
+
+        .bar input,
+        .bar select {
+            width: auto;
+            flex: 1;
+            min-width: 140px
+        }
+
+        .tw {
+            overflow-x: auto;
+            background: var(--card);
+            border: 1px solid var(--bd);
+            border-radius: 12px
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%
+        }
+
+        th,
+        td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--bd);
+            white-space: nowrap
+        }
+
+        th {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--mu)
+        }
+
+        tr:last-child td {
+            border: 0
+        }
+
+        td select {
+            padding: 4px 6px;
+            width: auto
+        }
+
+        .b {
+            padding: 2px 9px;
+            border-radius: 99px;
+            font-size: 12px;
+            background: #2f9e4430;
+            color: #2f9e44
+        }
+
+        .b.off {
+            background: #adb5bd30;
+            color: var(--mu)
+        }
+
+        .em {
+            padding: 28px;
+            text-align: center;
+            color: var(--mu)
+        }
+
+        .md {
+            position: fixed;
+            inset: 0;
+            background: #0007;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 9
+        }
+
+        .md form {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 20px;
+            width: 100%;
+            max-width: 420px;
+            max-height: 90vh;
+            overflow: auto
+        }
+
+        .md h3 {
+            margin: 0 0 6px
+        }
+
+        .ck {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .ck input {
+            width: auto
+        }
+
+        .acts {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 16px
+        }
+
+        @media(max-width:700px) {
+            .app {
+                flex-direction: column
+            }
+
+            nav {
+                width: 100%;
+                display: flex;
+                gap: 4px;
+                overflow-x: auto;
+                padding: 8px;
+                border: 0;
+                border-bottom: 1px solid var(--bd)
+            }
+
+            nav h3 {
+                display: none
+            }
+
+            nav button {
+                width: auto;
+                white-space: nowrap
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+    <script>
+        let T = sessionStorage.getItem('tms') || '', me = null, page = 'tasks', q = '', f = '', modal = null, err = '', rows = [], D = { roles: [], positions: [], statuses: [], users: [] }, tm;
+        const api = async (p, m = 'GET', b) => {
+            const r = await fetch('/api/' + p, { method: m, headers: { 'Content-Type': 'application/json', ...(T && { Authorization: 'Bearer ' + T }) }, body: b && JSON.stringify(b) });
+            const j = await r.json().catch(() => ({})); if (r.status === 401 && T) logout(); if (!r.ok) throw new Error(j.error || 'Request failed'); return j
+        };
+        const E = {
+            users: { t: 'Users', s: ['name', 'mobile'], ff: 'roleId', fields: [['name', 'Name'], ['mobile', 'Mobile'], ['roleId', 'Role', 'sel', 'roles'], ['positionId', 'Position', 'sel', 'positions'], ['address', 'Address', 'area'], ['password', 'Password', 'pw'], ['active', 'Active', 'chk']], cols: ['name', 'mobile', 'roleId', 'positionId', 'address', 'active'] },
+            roles: { t: 'Roles', s: ['name'], fields: [['name', 'Role name']], cols: ['name'] },
+            positions: { t: 'Positions', s: ['name'], fields: [['name', 'Position name']], cols: ['name'] },
+            statuses: { t: 'Status', s: ['name'], fields: [['name', 'Status name']], cols: ['name'] },
+            tasks: { t: 'Tasks', s: ['title'], ff: 'statusId', fields: [['title', 'Task name'], ['description', 'Description', 'area'], ['assigneeId', 'Assign to', 'sel', 'users'], ['statusId', 'Status', 'sel', 'statuses'], ['due', 'Due date', 'date']], cols: ['title', 'description', 'assigneeId', 'statusId', 'due'] }
+        };
+        const L = { name: 'Name', mobile: 'Mobile', roleId: 'Role', positionId: 'Position', address: 'Address', active: 'Status', title: 'Task', description: 'Description', assigneeId: 'Assigned to', statusId: 'Status', due: 'Due' };
+        const h = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const nm = (list, id) => (D[list].find(x => x.id == id) || {}).name || '—';
+        const isAdmin = () => me.role.toLowerCase() === 'admin', isMgr = () => me.role.toLowerCase() === 'manager';
+        const menu = () => isAdmin() ? ['users', 'roles', 'positions', 'tasks', 'statuses'] : ['tasks'];
+        const say = e => alert(e.message);
+        async function lookups() { const [a, b, c, d] = await Promise.all([api('roles'), api('positions'), api('statuses'), api('lookup/users')]); D = { roles: a, positions: b, statuses: c, users: d } }
+        async function refresh() { const e = E[page]; try { rows = await api(`${page}?q=${encodeURIComponent(q)}${f && e.ff ? `&${e.ff}=${f}` : ''}`) } catch (x) { rows = []; say(x) } render() }
+        async function init() { try { me = await api('me'); await lookups(); page = isAdmin() ? 'users' : 'tasks'; await refresh() } catch (e) { me = null; render() } }
+        function logout() { T = ''; sessionStorage.removeItem('tms'); me = null; render() }
+        function render() {
+            const r = document.getElementById('root');
+            if (!me) { r.innerHTML = `<form class="login" onsubmit="login(event)"><h2>Task Manager</h2><label>Mobile</label><input id="lm" required><label>Password</label><input id="lp" type="password" required><div class="err">${err}</div><button class="pri" style="width:100%;margin-top:14px">Sign in</button><div class="hint">Demo: 9000000001 (Admin), 9000000002 (Manager), 9000000003 (Employee). Password 1234.</div></form>`; return }
+            const e = E[page];
+            const can = r => page !== 'tasks' || isAdmin() || isMgr() || r.createdBy == me.id;
+            const cell = (r, k) => {
+                if (k === 'active') return `<span class="b ${r.active ? '' : 'off'}">${r.active ? 'Active' : 'Inactive'}</span>`;
+                if (k === 'roleId') return h(nm('roles', r[k])); if (k === 'positionId') return h(nm('positions', r[k])); if (k === 'assigneeId') return h(nm('users', r[k]));
+                if (k === 'statusId') return page === 'tasks' ? `<select onchange="setSt(${r.id},this.value)">${D.statuses.map(s => `<option value="${s.id}" ${s.id == r.statusId ? 'selected' : ''}>${h(s.name)}</option>`).join('')}</select>` : h(nm('statuses', r[k]));
+                return h(r[k] || '—')
+            };
+            const fl = e.ff === 'roleId' ? 'roles' : 'statuses';
+            const fo = e.ff ? `<select onchange="f=this.value;refresh()"><option value="">All ${fl}</option>${D[fl].map(o => `<option value="${o.id}" ${f == o.id ? 'selected' : ''}>${h(o.name)}</option>`).join('')}</select>` : '';
+            r.innerHTML = `<div class="app"><nav><h3>Task Manager</h3>${menu().map(m => `<button class="${m === page ? 'on' : ''}" onclick="go('${m}')">${E[m].t}</button>`).join('')}</nav><main>
+<div class="top"><div><b>${h(me.name)}</b> <span class="b">${h(me.role)}</span></div><button onclick="logout()">Logout</button></div>
+<div class="top"><h2 style="margin:0">${e.t}</h2><button class="pri" onclick="openM(null)">+ ${page === 'users' ? 'Add User' : 'New ' + e.t.replace(/s$/, '')}</button></div>
+<div class="bar"><input id="sq" placeholder="Search ${e.s.join(' / ')}" value="${h(q)}" oninput="q=this.value;clearTimeout(tm);tm=setTimeout(async()=>{await refresh();focusQ()},250)">${fo}</div>
+<div class="tw"><table><thead><tr>${e.cols.map(c => `<th>${L[c]}</th>`).join('')}<th></th></tr></thead><tbody>
+${rows.map(r => `<tr>${e.cols.map(c => `<td>${cell(r, c)}</td>`).join('')}<td>${can(r) ? `<button onclick="openM(${r.id})">Edit</button> <button class="dng" onclick="del(${r.id})">Delete</button>` : ''}</td></tr>`).join('') || `<tr><td class="em" colspan="9">No records found</td></tr>`}</tbody></table></div></main></div>${modal !== null ? form() : ''}`
+        }
+        function focusQ() { const i = document.getElementById('sq'); if (!i) return; i.focus(); i.setSelectionRange(q.length, q.length) }
+        function form() {
+            const e = E[page], r = modal.id ? rows.find(x => x.id === modal.id) : { active: true, statusId: D.statuses[0]?.id, assigneeId: me.id };
+            const fs = e.fields.filter(x => !(page === 'tasks' && x[0] === 'assigneeId' && !isAdmin() && !isMgr()));
+            return `<div class="md"><form onsubmit="submitM(event)"><h3>${modal.id ? 'Edit' : 'Add'} ${e.t.replace(/s$/, '')}</h3>${fs.map(([k, l, t, o]) => {
+                const v = r[k] ?? '';
+                if (t === 'chk') return `<label class="ck"><input type="checkbox" name="${k}" ${r[k] ? 'checked' : ''}> ${l}</label>`;
+                if (t === 'sel') return `<label>${l}</label><select name="${k}" required>${D[o].map(x => `<option value="${x.id}" ${x.id == v ? 'selected' : ''}>${h(x.name)}</option>`).join('')}</select>`;
+                if (t === 'area') return `<label>${l}</label><textarea name="${k}" rows="2">${h(v)}</textarea>`;
+                if (t === 'pw') return `<label>${l}${modal.id ? ' (leave blank to keep)' : ''}</label><input name="${k}" type="password" ${modal.id ? '' : 'required'}>`;
+                return `<label>${l}</label><input name="${k}" type="${t === 'date' ? 'date' : 'text'}" value="${h(v)}" ${['title', 'name', 'mobile'].includes(k) ? 'required' : ''}>`
+            }).join('')}
+<div class="acts"><button type="button" onclick="modal=null;render()">Cancel</button><button class="pri">Save</button></div></form></div>`}
+        async function login(ev) { ev.preventDefault(); try { const j = await api('login', 'POST', { mobile: lm.value, password: lp.value }); T = j.token; sessionStorage.setItem('tms', T); err = ''; await init() } catch (e) { err = e.message; render() } }
+        function go(p) { page = p; q = f = ''; refresh() }
+        function openM(id) { modal = { id }; render() }
+        async function submitM(ev) {
+            ev.preventDefault(); const fd = new FormData(ev.target), o = {};
+            E[page].fields.forEach(([k, , t]) => { if (t === 'chk') o[k] = fd.has(k); else if (fd.has(k)) o[k] = t === 'sel' ? +fd.get(k) : fd.get(k).trim() });
+            try { await api(modal.id ? `${page}/${modal.id}` : page, modal.id ? 'PUT' : 'POST', o); modal = null; if (page !== 'tasks') await lookups(); await refresh() } catch (e) { say(e) }
+        }
+        async function del(id) { if (!confirm('Delete this record?')) return; try { await api(`${page}/${id}`, 'DELETE'); if (page !== 'tasks') await lookups(); await refresh() } catch (e) { say(e) } }
+        async function setSt(id, v) { try { await api(`tasks/${id}/status`, 'PATCH', { statusId: +v }) } catch (e) { say(e); refresh() } }
+        T ? init() : render();
+    </script>
+</body>
+
+</html>
