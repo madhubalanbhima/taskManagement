@@ -132,6 +132,50 @@
             margin-top: 8px
         }
 
+        #api-loading {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: #0005;
+            color: var(--tx)
+        }
+
+        #api-loading[hidden] {
+            display: none
+        }
+
+        .loading-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            border: 1px solid var(--bd);
+            border-radius: 12px;
+            background: var(--card);
+            box-shadow: 0 8px 24px #0002
+        }
+
+        .loading-spinner {
+            width: 22px;
+            height: 22px;
+            border: 3px solid var(--bd);
+            border-top-color: var(--ac);
+            border-radius: 50%;
+            animation: loading-spin .8s linear infinite
+        }
+
+        @keyframes loading-spin {
+            to { transform: rotate(360deg) }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .loading-spinner { animation-duration: 1.8s }
+        }
+
         .app {
             display: flex;
             min-height: 100vh
@@ -364,11 +408,24 @@
 
 <body>
     <div id="root"></div>
+    <div id="api-loading" hidden role="status" aria-live="polite">
+        <div class="loading-card"><span class="loading-spinner" aria-hidden="true"></span><span>Loading...</span></div>
+    </div>
     <script>
         let T = sessionStorage.getItem('tms') || '', me = null, page = 'tasks', q = '', f = '', modal = null, commentTask = null, err = '', rows = [], D = { roles: [], positions: [], statuses: [], users: [] }, tm;
+        let pendingApiRequests = 0;
+        function setApiLoading(active) {
+            pendingApiRequests = Math.max(0, pendingApiRequests + (active ? 1 : -1));
+            document.getElementById('api-loading').hidden = pendingApiRequests === 0;
+        }
         const api = async (p, m = 'GET', b) => {
-            const r = await fetch('/api/' + p, { method: m, headers: { 'Content-Type': 'application/json', ...(T && { Authorization: 'Bearer ' + T }) }, body: b && JSON.stringify(b) });
-            const j = await r.json().catch(() => ({})); if (r.status === 401 && T) logout(); if (!r.ok) throw new Error(j.error || 'Request failed'); return j
+            setApiLoading(true);
+            try {
+                const r = await fetch('/api/' + p, { method: m, headers: { 'Content-Type': 'application/json', ...(T && { Authorization: 'Bearer ' + T }) }, body: b && JSON.stringify(b) });
+                const j = await r.json().catch(() => ({})); if (r.status === 401 && T) logout(); if (!r.ok) throw new Error(j.error || 'Request failed'); return j
+            } finally {
+                setApiLoading(false);
+            }
         };
         const E = {
             users: { t: 'Users', s: ['name', 'mobile'], ff: 'roleId', fields: [['name', 'Name'], ['mobile', 'Mobile'], ['roleId', 'Role', 'sel', 'roles'], ['positionId', 'Position', 'sel', 'positions'], ['address', 'Address', 'area'], ['password', 'Password', 'pw'], ['active', 'Active', 'chk']], cols: ['name', 'mobile', 'roleId', 'positionId', 'address', 'active'] },
