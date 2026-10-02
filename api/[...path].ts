@@ -13,5 +13,11 @@ export default async function handler(req: Request, res: Response): Promise<void
     return;
   }
 
+  const requestUrl = req.url || '/';
+  const pathname = requestUrl.split('?', 1)[0];
+  if (pathname !== '/api' && !pathname.startsWith('/api/')) {
+    req.url = `/api${requestUrl.startsWith('/') ? '' : '/'}${requestUrl}`;
+  }
+
   app(req, res);
 }
