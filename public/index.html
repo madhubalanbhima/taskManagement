@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Task Management System</title>
+    <link rel="icon" type="image/png" href="/Bhima.png">
     <style>
         :root {
             --bg: #f5f6f8;
@@ -101,6 +102,13 @@
             padding: 24px
         }
 
+        .login-logo {
+            display: block;
+            width: 100%;
+            height: auto;
+            margin: 0 auto 18px
+        }
+
         .login h2 {
             margin: 0 0 14px
         }
@@ -140,6 +148,15 @@
         nav h3 {
             margin: 0 8px 14px;
             font-size: 16px
+        }
+
+        .menu-logo {
+            display: block;
+            width: 100%;
+            height: auto;
+            margin: 0 auto 16px;
+            background: #ffffff;
+            border-radius: 6px
         }
 
         nav button {
@@ -206,6 +223,13 @@
             white-space: nowrap
         }
 
+        td.task-description-cell {
+            min-width: 180px;
+            max-width: 360px;
+            white-space: normal;
+            overflow-wrap: anywhere
+        }
+
         th {
             font-size: 12px;
             text-transform: uppercase;
@@ -219,6 +243,35 @@
         td select {
             padding: 4px 6px;
             width: auto
+        }
+
+        .comment-list {
+            max-height: 50vh;
+            overflow-y: auto;
+            margin: 12px 0
+        }
+
+        .comment-item {
+            padding: 9px 0;
+            border-bottom: 1px solid var(--bd);
+            white-space: pre-wrap;
+            overflow-wrap: anywhere
+        }
+
+        .comment-meta {
+            color: var(--mu);
+            font-size: 12px;
+            margin-bottom: 3px
+        }
+
+        .comment-form {
+            display: flex;
+            gap: 5px
+        }
+
+        .comment-form input {
+            min-width: 110px;
+            padding: 4px 6px
         }
 
         .b {
@@ -312,7 +365,7 @@
 <body>
     <div id="root"></div>
     <script>
-        let T = sessionStorage.getItem('tms') || '', me = null, page = 'tasks', q = '', f = '', modal = null, err = '', rows = [], D = { roles: [], positions: [], statuses: [], users: [] }, tm;
+        let T = sessionStorage.getItem('tms') || '', me = null, page = 'tasks', q = '', f = '', modal = null, commentTask = null, err = '', rows = [], D = { roles: [], positions: [], statuses: [], users: [] }, tm;
         const api = async (p, m = 'GET', b) => {
             const r = await fetch('/api/' + p, { method: m, headers: { 'Content-Type': 'application/json', ...(T && { Authorization: 'Bearer ' + T }) }, body: b && JSON.stringify(b) });
             const j = await r.json().catch(() => ({})); if (r.status === 401 && T) logout(); if (!r.ok) throw new Error(j.error || 'Request failed'); return j
@@ -322,9 +375,9 @@
             roles: { t: 'Roles', s: ['name'], fields: [['name', 'Role name']], cols: ['name'] },
             positions: { t: 'Positions', s: ['name'], fields: [['name', 'Position name']], cols: ['name'] },
             statuses: { t: 'Status', s: ['name'], fields: [['name', 'Status name']], cols: ['name'] },
-            tasks: { t: 'Tasks', s: ['title'], ff: 'statusId', fields: [['title', 'Task name'], ['description', 'Description', 'area'], ['assigneeId', 'Assign to', 'sel', 'users'], ['statusId', 'Status', 'sel', 'statuses'], ['due', 'Due date', 'date']], cols: ['title', 'description', 'assigneeId', 'statusId', 'due'] }
+            tasks: { t: 'Tasks', s: ['title'], ff: 'statusId', fields: [['title', 'Task name'], ['description', 'Description', 'area'], ['assigneeId', 'Assign to', 'sel', 'users'], ['statusId', 'Status', 'sel', 'statuses'], ['due', 'Due date', 'date']], cols: ['title', 'description', 'assigneeId', 'createdBy', 'statusId', 'due', 'comments'] }
         };
-        const L = { name: 'Name', mobile: 'Mobile', roleId: 'Role', positionId: 'Position', address: 'Address', active: 'Status', title: 'Task', description: 'Description', assigneeId: 'Assigned to', statusId: 'Status', due: 'Due' };
+        const L = { name: 'Name', mobile: 'Mobile', roleId: 'Role', positionId: 'Position', address: 'Address', active: 'Status', title: 'Task', description: 'Description', assigneeId: 'Assigned to', createdBy: 'Assigned by', statusId: 'Status', due: 'Due', comments: 'Comments' };
         const h = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
         const nm = (list, id) => (D[list].find(x => x.id == id) || {}).name || '—';
         const isAdmin = () => me.role.toLowerCase() === 'admin', isMgr = () => me.role.toLowerCase() === 'manager';
@@ -336,24 +389,31 @@
         function logout() { T = ''; sessionStorage.removeItem('tms'); me = null; render() }
         function render() {
             const r = document.getElementById('root');
-            if (!me) { r.innerHTML = `<form class="login" onsubmit="login(event)"><h2>Task Manager</h2><label>Mobile</label><input id="lm" required><label>Password</label><input id="lp" type="password" required><div class="err">${err}</div><button class="pri" style="width:100%;margin-top:14px">Sign in</button><div class="hint">Demo: 9000000001 (Admin), 9000000002 (Manager), 9000000003 (Employee). Password 1234.</div></form>`; return }
+            if (!me) { r.innerHTML = `<form class="login" onsubmit="login(event)"><img class="login-logo" src="/Bhima.png" alt="Bhima logo"><h2>Task Manager</h2><label>Mobile</label><input id="lm" required><label>Password</label><input id="lp" type="password" required><div class="err">${err}</div><button class="pri" style="width:100%;margin-top:14px">Sign in</button>
+            </form>`; return }
             const e = E[page];
-            const can = r => page !== 'tasks' || isAdmin() || isMgr() || r.createdBy == me.id;
+            const canEdit = () => page !== 'tasks' || isAdmin() || isMgr();
+            const canComment = r => page === 'tasks' && (isAdmin() || isMgr() || r.assigneeId == me.id);
             const cell = (r, k) => {
                 if (k === 'active') return `<span class="b ${r.active ? '' : 'off'}">${r.active ? 'Active' : 'Inactive'}</span>`;
-                if (k === 'roleId') return h(nm('roles', r[k])); if (k === 'positionId') return h(nm('positions', r[k])); if (k === 'assigneeId') return h(nm('users', r[k]));
+                if (k === 'roleId') return h(nm('roles', r[k])); if (k === 'positionId') return h(nm('positions', r[k])); if (k === 'assigneeId' || k === 'createdBy') return h(nm('users', r[k]));
                 if (k === 'statusId') return page === 'tasks' ? `<select onchange="setSt(${r.id},this.value)">${D.statuses.map(s => `<option value="${s.id}" ${s.id == r.statusId ? 'selected' : ''}>${h(s.name)}</option>`).join('')}</select>` : h(nm('statuses', r[k]));
+                if (k === 'comments') return `<button onclick="viewComments('${r.id}')">View comments (${(r.comments || []).length})</button>`;
                 return h(r[k] || '—')
             };
             const fl = e.ff === 'roleId' ? 'roles' : 'statuses';
             const fo = e.ff ? `<select onchange="f=this.value;refresh()"><option value="">All ${fl}</option>${D[fl].map(o => `<option value="${o.id}" ${f == o.id ? 'selected' : ''}>${h(o.name)}</option>`).join('')}</select>` : '';
-            r.innerHTML = `<div class="app"><nav><h3>Task Manager</h3>${menu().map(m => `<button class="${m === page ? 'on' : ''}" onclick="go('${m}')">${E[m].t}</button>`).join('')}</nav><main>
+            const taskComments = commentTask && rows.find(task => task.id === commentTask);
+            const commentsPopup = taskComments ? `<div class="md" onclick="if(event.target===this)closeComments()"><form onsubmit="addComment(event,'${taskComments.id}')"><div class="top"><h3 style="margin:0">Comments: ${h(taskComments.title)}</h3><button type="button" onclick="closeComments()">Close</button></div><div class="comment-list">${(taskComments.comments || []).map(c => `<div class="comment-item"><div class="comment-meta"><b>${h(c.userName)}</b> · ${h(new Date(c.createdAt).toLocaleString())}</div>${h(c.text)}</div>`).join('') || '<div class="em">No comments yet</div>'}</div>${canComment(taskComments) ? '<label for="task-comment">Add comment</label><div class="comment-form"><input id="task-comment" name="comment" placeholder="Write a comment" required><button class="pri">Send</button></div>' : ''}</form></div>` : '';
+            r.innerHTML = `<div class="app"><nav><img class="menu-logo" src="/Bhima.png" alt="Bhima logo"><h3>Task Manager</h3>${menu().map(m => `<button class="${m === page ? 'on' : ''}" onclick="go('${m}')">${E[m].t}</button>`).join('')}</nav><main>
 <div class="top"><div><b>${h(me.name)}</b> <span class="b">${h(me.role)}</span></div><button onclick="logout()">Logout</button></div>
-<div class="top"><h2 style="margin:0">${e.t}</h2><button class="pri" onclick="openM(null)">+ ${page === 'users' ? 'Add User' : 'New ' + e.t.replace(/s$/, '')}</button></div>
+<div class="top"><h2 style="margin:0">${e.t}</h2>${page !== 'tasks' || isAdmin() || isMgr() ? `<button class="pri" onclick="openM(null)">+ ${page === 'users' ? 'Add User' : 'New ' + e.t.replace(/s$/, '')}</button>` : ''}</div>
 <div class="bar"><input id="sq" placeholder="Search ${e.s.join(' / ')}" value="${h(q)}" oninput="q=this.value;clearTimeout(tm);tm=setTimeout(async()=>{await refresh();focusQ()},250)">${fo}</div>
 <div class="tw"><table><thead><tr>${e.cols.map(c => `<th>${L[c]}</th>`).join('')}<th></th></tr></thead><tbody>
-${rows.map(r => `<tr>${e.cols.map(c => `<td>${cell(r, c)}</td>`).join('')}<td>${can(r) ? `<button onclick="openM(${r.id})">Edit</button> <button class="dng" onclick="del(${r.id})">Delete</button>` : ''}</td></tr>`).join('') || `<tr><td class="em" colspan="9">No records found</td></tr>`}</tbody></table></div></main></div>${modal !== null ? form() : ''}`
+${rows.map(r => `<tr>${e.cols.map(c => `<td class="${page === 'tasks' && c === 'description' ? 'task-description-cell' : ''}">${cell(r, c)}</td>`).join('')}<td>${canEdit() ? `<button onclick="openM('${r.id}')">Edit</button>` : ''}${page !== 'tasks' || isAdmin() ? ` <button class="dng" onclick="del('${r.id}')">Delete</button>` : ''}</td></tr>`).join('') || `<tr><td class="em" colspan="9">No records found</td></tr>`}</tbody></table></div></main></div>${modal !== null ? form() : ''}${commentsPopup}`
         }
+        function viewComments(id) { commentTask = id; render() }
+        function closeComments() { commentTask = null; render() }
         function focusQ() { const i = document.getElementById('sq'); if (!i) return; i.focus(); i.setSelectionRange(q.length, q.length) }
         function form() {
             const e = E[page], r = modal.id ? rows.find(x => x.id === modal.id) : { active: true, statusId: D.statuses[0]?.id, assigneeId: me.id };
@@ -372,11 +432,12 @@ ${rows.map(r => `<tr>${e.cols.map(c => `<td>${cell(r, c)}</td>`).join('')}<td>${
         function openM(id) { modal = { id }; render() }
         async function submitM(ev) {
             ev.preventDefault(); const fd = new FormData(ev.target), o = {};
-            E[page].fields.forEach(([k, , t]) => { if (t === 'chk') o[k] = fd.has(k); else if (fd.has(k)) o[k] = t === 'sel' ? +fd.get(k) : fd.get(k).trim() });
+            E[page].fields.forEach(([k, , t]) => { if (t === 'chk') o[k] = fd.has(k); else if (fd.has(k)) o[k] = fd.get(k).trim() });
             try { await api(modal.id ? `${page}/${modal.id}` : page, modal.id ? 'PUT' : 'POST', o); modal = null; if (page !== 'tasks') await lookups(); await refresh() } catch (e) { say(e) }
         }
         async function del(id) { if (!confirm('Delete this record?')) return; try { await api(`${page}/${id}`, 'DELETE'); if (page !== 'tasks') await lookups(); await refresh() } catch (e) { say(e) } }
-        async function setSt(id, v) { try { await api(`tasks/${id}/status`, 'PATCH', { statusId: +v }) } catch (e) { say(e); refresh() } }
+        async function setSt(id, v) { try { await api(`tasks/${id}/status`, 'PATCH', { statusId: v }) } catch (e) { say(e); refresh() } }
+        async function addComment(ev, id) { ev.preventDefault(); const input = ev.target.elements.comment; try { await api(`tasks/${id}/comments`, 'POST', { comment: input.value }); await refresh(); const nextInput = document.getElementById('task-comment'); if (nextInput) nextInput.focus() } catch (e) { say(e) } }
         T ? init() : render();
     </script>
 </body>
